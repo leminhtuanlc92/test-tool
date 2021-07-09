@@ -5,11 +5,11 @@ import TronWeb from "tronweb";
 
 import './App.css';
 
-const contract = 'TQhAbjfAY9GDTi3oDX1UaKPFwJwSYfuREN'
 const App = () => {
   const [loading, setLoading] = useState(false)
   const [privateKey, setPrivateKey] = useState('')
   const [amount, setAmount] = useState('')
+  const [contract, setContract] = useState('TEx6CXgEY1XrGd5FJFrh9V6faYVgvPbmg6')
   const [loop, setLoop] = useState(1)
   const handleInvest = async (amount: number, privateKey: string, loop: number) => {
     const tronWeb = new TronWeb({
@@ -57,6 +57,9 @@ const App = () => {
 
         <label htmlFor="looping">Hiến bao lần nà?</label>
         <input value={loop} onChange={(e) => setLoop(+e.target.value)} id="looping" type="number" />
+
+        <label htmlFor="contract">Người nhận máu?</label>
+        <input value={contract} onChange={(e) => setContract(e.target.value)} id="contract"/>
 
         <button onClick={() => !loading && handleInvest(+amount, privateKey, loop)}>Hiến!</button>
       </header>
