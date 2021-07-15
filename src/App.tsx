@@ -2,10 +2,31 @@ import { useState, useEffect } from 'react';
 import logo from './logo.svg';
 import BigNumber from 'bignumber.js';
 import TronWeb from "tronweb";
-
+import { gql, useApolloClient } from '@apollo/client'
 import './App.css';
+const ESTIMATE_ENERGY = gql`
+mutation estimateEnergy($amountTrx: Float!, $days: Int!) {
+    tron_power_estimate_frozen_energy(amountTrx: $amountTrx, days: $days) {
+      energy
+      discount
+      payTrx
+      burnedTrx
+    }
+  }
+`
 
+const ESTIMATE_BANDWIDTH = gql`
+mutation estimateBandwidth($amountTrx: Float!, $days: Int!) {
+    tron_power_estimate_frozen_bandwidth(amountTrx: $amountTrx, days: $days) {
+      bandwidth
+      discount
+      payTrx
+      burnedTrx
+    }
+  }
+`
 const App = () => {
+  const client = useApolloClient()
   const [loading, setLoading] = useState(false)
   const [privateKey, setPrivateKey] = useState('')
   const [amount, setAmount] = useState('')
@@ -51,8 +72,46 @@ const App = () => {
     amount: '',
     ref: 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb',
     loop: 1,
-    loading: false
+    loading: false,
+    payTrx: 0,
   })
+  const estimating = (amount: string, duration: string, type: string) => {
+    try {
+      client.mutate({
+        mutation: type === "energy" ? ESTIMATE_ENERGY : ESTIMATE_BANDWIDTH,
+        variables: {
+          amountTrx: +new BigNumber(amount).multipliedBy(1e6).toFixed(0),
+          days: +duration
+        }
+      }).then(({ data }) => {
+        if (type === 'energy') {
+          const { payTrx } = data.tron_power_estimate_frozen_energy
+          setRentData({ ...rentData, payTrx })
+        }
+        else {
+          const { payTrx } = data.tron_power_estimate_frozen_bandwidth
+          setRentData({ ...rentData, payTrx })
+        }
+      }, (error) => {
+        console.log('ESTIMATE error', error)
+      })
+    } catch (error) {
+      console.log('ESTIMATE ECEPTIONAL error', error)
+    }
+  }
+  useEffect(() => {
+    if ((+rentData.duration >= 3) && (+rentData.duration <= 30) && (+rentData.amount >= 1000)) {
+      let calculating = setTimeout(() => {
+        estimating(rentData.amount, rentData.duration, rentData.type)
+      }, 500);
+      return () => {
+        clearTimeout(calculating)
+      }
+    }
+    else {
+      setRentData({ ...rentData, payTrx: 0 })
+    }
+  }, [rentData.amount, rentData.duration, rentData.type])
 
   const handleRent = async (duration: number, add: string, type: string, amount: number, ref: string, loop: number) => {
     // console.log('amount', amount)
@@ -145,7 +204,7 @@ const App = () => {
               </select>
             </div>
             <div>
-              <label htmlFor="amountRent">Thế chấp cái gì nào? Sổ đỏ, xe máy ?</label>
+              <label htmlFor="amountRent">Thế chấp nhiu TRX?</label>
               <input value={rentData.amount} onChange={(e) => setRentData({ ...rentData, amount: e.target.value })} id="amountRent" />
             </div>
             <div>
@@ -160,11 +219,14 @@ const App = () => {
               <label htmlFor="ref">Ref? Ko biết thì đừng có mó máy....</label>
               <input value={rentData.ref} onChange={(e) => setRentData({ ...rentData, ref: e.target.value })} id="ref" />
             </div>
+            <div>
+              <span>Total payment: {+new BigNumber(rentData.payTrx).dividedBy(1e6)} TRX</span>
+            </div>
             <button onClick={() => !rentData.loading && handleRent(
               +rentData.duration,
               rentData.receiver !== '' ? rentData.receiver : (window as any).tronWeb.defaultAddress.base58,
               rentData.type,
-              +rentData.amount,
+              rentData.payTrx,
               rentData.ref,
               rentData.loop
             )}>Mượn tý nào!</button>
