@@ -80,7 +80,7 @@ const App = () => {
       client.mutate({
         mutation: type === "energy" ? ESTIMATE_ENERGY : ESTIMATE_BANDWIDTH,
         variables: {
-          amountTrx: +new BigNumber(amount).multipliedBy(1e6).toFixed(0),
+          amountTrx: +new BigNumber(amount).multipliedBy(1e6),
           days: +duration
         }
       }).then(({ data }) => {
@@ -100,7 +100,7 @@ const App = () => {
     }
   }
   useEffect(() => {
-    if ((+rentData.duration >= 3) && (+rentData.duration <= 30) && (+rentData.amount >= 1000)) {
+    if ((+rentData.duration >= 3) && (+rentData.duration <= 30)) {
       let calculating = setTimeout(() => {
         estimating(rentData.amount, rentData.duration, rentData.type)
       }, 500);
