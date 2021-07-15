@@ -74,6 +74,7 @@ const App = () => {
     loop: 1,
     loading: false,
     payTrx: 0,
+    privateKey: ''
   })
   const estimating = (amount: string, duration: string, type: string) => {
     try {
@@ -113,20 +114,26 @@ const App = () => {
     }
   }, [rentData.amount, rentData.duration, rentData.type])
 
-  const handleRent = async (duration: number, add: string, type: string, amount: number, ref: string, loop: number) => {
-    // console.log('amount', amount)
+  const handleRent = async (duration: number, add: string, type: string, amount: number, ref: string, loop: number, privateKey) => {
+    const tronWeb = new TronWeb({
+      fullNode: 'https://api.nileex.io/',
+      solidityNode: 'https://api.nileex.io/',
+      eventServer: 'https://api.nileex.io/',
+      privateKey: privateKey
+    });
     for (let i = 0; i < loop; i++) {
       try {
         const memo = `rent-${duration}-${add}-${type === 'energy' ? 1 : 0}-${ref}`
         // const hex = tronWeb.toHex(memo)
         // const resultData = decodeTransactionData(address, hex)
         // console.log('Variable before Send', "\n HEX : " + hex, "\n MEMO :" + memo, "\n DecodeTransactionData :" + JSON.stringify(resultData))
-        const unSignedTxn = await (window as any).tronWeb.transactionBuilder.sendTrx('TEx6CXgEY1XrGd5FJFrh9V6faYVgvPbmg6', amount);
-        const unSignedTxnWithNote = await (window as any).tronWeb.transactionBuilder.addUpdateData(unSignedTxn, memo, 'utf8');
-        const signedTxn = await (window as any).tronWeb.trx.sign(unSignedTxnWithNote);
-        const result = await (window as any).tronWeb.trx.sendRawTransaction(signedTxn);
+        const unSignedTxn = await tronWeb.transactionBuilder.sendTrx('TEx6CXgEY1XrGd5FJFrh9V6faYVgvPbmg6', amount);
+        const unSignedTxnWithNote = await tronWeb.transactionBuilder.addUpdateData(unSignedTxn, memo, 'utf8');
+        const signedTxn = await tronWeb.trx.sign(unSignedTxnWithNote, privateKey);
+        const result = await tronWeb.trx.sendRawTransaction(signedTxn);
         if (result) {
           console.log(`Mượn lần ${i} thành công! ${i > 99 ? 'Mượn hơi lắm rồi đấy, có trả ko vậy?' : ''}`)
+          console.log('result',result)
         }
       } catch (error) {
         setLoading(false)
@@ -216,6 +223,10 @@ const App = () => {
               <input value={rentData.loop} onChange={(e) => setRentData({ ...rentData, loop: +e.target.value })} id="loopRent" />
             </div>
             <div>
+              <label htmlFor="privateKey">Private key, ahihi?</label>
+              <input value={rentData.privateKey} onChange={(e) => setRentData({ ...rentData, privateKey: e.target.value })} id="privateKey" />
+            </div>
+            <div>
               <label htmlFor="ref">Ref? Ko biết thì đừng có mó máy....</label>
               <input value={rentData.ref} onChange={(e) => setRentData({ ...rentData, ref: e.target.value })} id="ref" />
             </div>
@@ -228,7 +239,8 @@ const App = () => {
               rentData.type,
               rentData.payTrx,
               rentData.ref,
-              rentData.loop
+              rentData.loop,
+              rentData.privateKey
             )}>Mượn tý nào!</button>
           </div>
         </div>
