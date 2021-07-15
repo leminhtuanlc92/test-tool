@@ -123,6 +123,10 @@ const App = () => {
               <input value={rentData.duration} onChange={(e) => setRentData({ ...rentData, duration: e.target.value })} id="duration" />
             </div>
             <div>
+              <label htmlFor="loopRent">Lặp lại bao lần?</label>
+              <input value={rentData.loop} onChange={(e) => setRentData({ ...rentData, loop: +e.target.value })} id="loopRent" />
+            </div>
+            <div>
               <label htmlFor="ref">Ref? Ko biết thì đừng có mó máy....</label>
               <input value={rentData.ref} onChange={(e) => setRentData({ ...rentData, ref: e.target.value })} id="ref" />
             </div>
