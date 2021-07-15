@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import logo from './logo.svg';
 import BigNumber from 'bignumber.js';
 import TronWeb from "tronweb";
@@ -18,7 +18,6 @@ const App = () => {
       eventServer: 'https://api.nileex.io/',
       privateKey: privateKey
     });
-    console.log('LL', amount, privateKey, loop, contract)
     for (let i = 0; i < loop; i++) {
       try {
         const memo = `provide`
@@ -78,6 +77,37 @@ const App = () => {
       }
     }
   }
+  const waitTron = () => {
+    return new Promise((res) => {
+      let attempts = 0,
+        maxAttempts = 20;
+      const checkTron = () => {
+        if (
+          (window as any).tronWeb &&
+          (window as any).tronWeb.defaultAddress.base58
+        ) {
+          res(true);
+          return;
+        }
+        attempts++;
+        if (attempts >= maxAttempts) {
+          res(false);
+          return;
+        }
+        setTimeout(checkTron, 100);
+      };
+      checkTron();
+    });
+  };
+  const initAction = async () => {
+    let tronExist = await waitTron();
+    if (tronExist) {
+      setRentData({ ...rentData, receiver: (window as any).tronWeb.defaultAddress.base58 })
+    }
+  };
+  useEffect(() => {
+    initAction()
+  }, [])
   return (
     <div className="App">
       <header className="App-header">
@@ -105,7 +135,7 @@ const App = () => {
           <div className="right">
             <div>
               <label htmlFor="receiver">Cưng mượn cho đứa nào?</label>
-              <input value={rentData.receiver} onChange={(e) => setRentData({ ...rentData, receiver: e.target.value })} id="receiver" placeholder={`Mị mượn cho chính Mị, được hơm (${(window as any).tronWeb.defaultAddress.base58})`} />
+              <input value={rentData.receiver} onChange={(e) => setRentData({ ...rentData, receiver: e.target.value })} id="receiver" />
             </div>
             <div>
               <label htmlFor="duration">Mượn cái gì? Ở đây chúng tôi ko dùng tiền...</label>
